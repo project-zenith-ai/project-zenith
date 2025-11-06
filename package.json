@@ -1,0 +1,37 @@
+{
+  "name": "project-zenith",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "next": "15.5.4",
+    "next-connect": "^1.0.0",
+    "openai": "^6.8.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "redoc": "^2.5.1",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4.1.14",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.7.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.4",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5"
+  }
+}
