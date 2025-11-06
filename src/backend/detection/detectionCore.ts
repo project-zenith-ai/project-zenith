@@ -1,14 +1,18 @@
 import { normalizeText, validateText } from './inputHandler';
 import { extractTextFeatures, TextFeatures } from './featureExtractor';
-import { runAICouncil } from './aiBridge/index';
+import { analyzeTextWithCouncil } from './aiBridge';
+import { CouncilVerdict, AIResponse } from './aiBridge/types';
 
 export interface DetectionResult {
   isAI: boolean;
-  probability: number; // 0–1
+  probability: number;            // AI likelihood 0–1
+  humanProbability: number;       // Human likelihood 0–1
   features: TextFeatures;
-  explanation: string;
+  explanation: string;            // heuristic or fallback explanation
   featureContributions: { [key in keyof TextFeatures]?: number };
-  aiReasoning?: string; // optional AI explanation
+  aiReasoning?: string;           // council reasoning (if available)
+  councilConsensus?: string;      // council summary
+  councilMembers?: AIResponse[];  // individual votes
 }
 
 export async function runDetection(rawText: string): Promise<DetectionResult> {
@@ -17,7 +21,7 @@ export async function runDetection(rawText: string): Promise<DetectionResult> {
   const text = normalizeText(rawText);
   const features = extractTextFeatures(text);
 
-  // Heuristic weights (v2 - tuned for balance)
+  // --- Heuristic weights
   const weights: Partial<Record<keyof TextFeatures, number>> = {
     avgWordLength: 0.1,
     lexicalDiversity: -0.2,
@@ -39,35 +43,43 @@ export async function runDetection(rawText: string): Promise<DetectionResult> {
     score += contribution;
   }
 
-  // Sigmoid normalization for heuristic probability
   let heuristicProbability = 1 / (1 + Math.exp(-score));
   heuristicProbability = Math.min(Math.max(heuristicProbability, 0), 1);
 
-  // Call AI council
-  let aiProbability = heuristicProbability;
-  let aiReasoning = '';
+  // --- Call AI Council
+  let councilVerdict: CouncilVerdict | null = null;
   try {
-    const aiResult = await runAICouncil(text, features);
-    if (aiResult) {
-      const aiWeight = 0.5; // blending factor, adjustable
-      aiProbability = heuristicProbability * (1 - aiWeight) + aiResult.aiProbability * aiWeight;
-      aiReasoning = aiResult.reasoning;
-    }
+    councilVerdict = await analyzeTextWithCouncil(text);
   } catch (err) {
-    console.warn('AI council call failed, falling back to heuristic only:', err);
+    console.warn('[DetectionCore] AI Council unavailable, using heuristic only:', err);
   }
 
-  // Construct explanation
-  const explanationParts = Object.entries(featureContributions)
-    .map(([feature, value]) => `${feature}: ${value?.toFixed(3)}`)
-    .join(', ');
+  const councilAvailable = !!councilVerdict?.individualVotes?.length;
+
+  // --- Compute final blended probabilities
+  const aiWeight = 0.5;
+  const councilScore = councilAvailable
+    ? councilVerdict!.consensusScore
+    : heuristicProbability;
+
+  const blendedProbability = heuristicProbability * (1 - aiWeight) + councilScore * aiWeight;
+
+  const aiConfidence = councilAvailable ? councilVerdict!.consensusScore : blendedProbability;
+  const humanConfidence = 1 - aiConfidence;
 
   return {
-    isAI: aiProbability > 0.6,
-    probability: aiProbability,
+    isAI: aiConfidence > 0.6,
+    probability: aiConfidence,
+    humanProbability: humanConfidence,
     features,
     featureContributions,
-    explanation: `This text was analyzed using heuristic linguistic markers. Feature impacts — ${explanationParts}.`,
-    aiReasoning,
+    aiReasoning: councilVerdict?.reasoning ?? undefined,
+    councilConsensus: councilVerdict?.reasoning ?? undefined,
+    councilMembers: councilVerdict?.individualVotes ?? [],
+    explanation: councilAvailable
+      ? '' // explanation handled in postProcessor if council exists
+      : `Heuristic linguistic markers applied. Feature impacts — ${Object.entries(featureContributions)
+          .map(([f, v]) => `${f}: ${v?.toFixed(3)}`)
+          .join(', ')}.`,
   };
 }

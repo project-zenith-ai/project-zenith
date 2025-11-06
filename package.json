@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/genai": "^1.29.0",
+    "@huggingface/inference": "^4.13.1",
+    "cohere-ai": "^7.19.0",
     "express": "^5.1.0",
     "next": "15.5.4",
     "next-connect": "^1.0.0",

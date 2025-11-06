@@ -9,11 +9,19 @@ interface Features {
   avgWordLength: number;
 }
 
+interface CouncilMember {
+  name: string;
+  aiLikely: boolean;
+  confidence: string;
+  explanation?: string;
+}
+
 interface DetectionResponse {
   aiLikely: boolean;
   confidence: string;
   features: Features;
   explanation?: string;
+  councilMembers?: CouncilMember[];
 }
 
 export default function Home() {
@@ -71,6 +79,7 @@ export default function Home() {
             confidence={result.confidence}
             features={result.features}
             explanation={result.explanation}
+            councilMembers={result.councilMembers}
           />
         )}
       </div>

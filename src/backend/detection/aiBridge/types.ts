@@ -1,6 +1,7 @@
 export interface AIResponse {
   provider: string;               // e.g. "OpenAI", "Claude", "Groq"
   aiLikely: boolean;              // true if the model thinks it's AI-written
+  humanLikely: number;           // true if the model thinks it's human-written
   confidence: number;             // 0–1 probability
   reasoning: string;              // explanation
   rawOutput?: unknown;            // full provider response

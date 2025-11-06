@@ -11,10 +11,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { text } = req.body;
     if (!text) return res.status(400).json({ error: 'Missing "text" in request body.' });
 
-    // Run detection (now async with AI council)
+    // Run detection with AI council
     const result = await runDetection(text);
 
-    // Format output
+    // Format output (includes structured councilMembers array)
     const formatted = formatResult(result);
 
     return res.status(200).json(formatted);

@@ -20,10 +20,7 @@ export const groqProvider: AIProvider = {
             content:
               "You are an AI text analysis expert. Determine if a text was written by an AI or a human. Return JSON only in the form { aiLikely: boolean, confidence: number, reasoning: string }.",
           },
-          {
-            role: "user",
-            content: `Analyze this text for AI-likeness:\n\n${text}`,
-          },
+          { role: "user", content: `Analyze this text:\n\n${text}` },
         ],
         temperature: 0.3,
         max_tokens: 200,
@@ -31,7 +28,6 @@ export const groqProvider: AIProvider = {
     });
 
     if (!res.ok) throw new Error(`Groq API error: ${res.statusText}`);
-
     const data = await res.json();
     const rawContent = data.choices?.[0]?.message?.content?.trim() ?? "";
 
@@ -45,7 +41,6 @@ export const groqProvider: AIProvider = {
       confidence = parsed.confidence ?? confidence;
       reasoning = parsed.reasoning ?? reasoning;
     } catch {
-      // Fallback heuristic if response isn’t valid JSON
       if (/ai/i.test(rawContent) && !/human/i.test(rawContent)) {
         aiLikely = true;
         confidence = 0.8;
@@ -55,9 +50,12 @@ export const groqProvider: AIProvider = {
       }
     }
 
+    const humanLikely = 1 - confidence;
+
     return {
       provider: "Groq",
       aiLikely,
+      humanLikely,
       confidence,
       reasoning,
       rawOutput: data,

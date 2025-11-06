@@ -1,9 +1,7 @@
 import OpenAI from "openai";
 import { AIProvider, AIResponse } from "../types";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export const openAIProvider: AIProvider = {
   name: "OpenAI GPT-5 Nano (Flex)",
@@ -16,14 +14,11 @@ export const openAIProvider: AIProvider = {
           {
             role: "system",
             content:
-              "You are an AI detector. Return a JSON object ONLY in the form { aiLikely: boolean, confidence: number, reasoning: string } based on whether the given text seems AI-written.",
+              "You are an AI detector. Return JSON ONLY in the form { aiLikely: boolean, confidence: number, reasoning: string }.",
           },
-          {
-            role: "user",
-            content: `Text to analyze:\n\n${text}`,
-          },
+          { role: "user", content: `Text to analyze:\n\n${text}` },
         ],
-        temperature: 0.3,
+        temperature: 1,
       });
 
       const rawContent = response.choices?.[0]?.message?.content?.trim() ?? "";
@@ -38,27 +33,16 @@ export const openAIProvider: AIProvider = {
         confidence = parsed.confidence ?? confidence;
         reasoning = parsed.reasoning ?? reasoning;
       } catch {
-        // Fallback for non-JSON replies
         if (/ai/i.test(rawContent) && !/human/i.test(rawContent)) aiLikely = true;
         if (/human/i.test(rawContent) && !/ai/i.test(rawContent)) aiLikely = false;
       }
 
-      return {
-        provider: "OpenAI GPT-5 Nano Flex",
-        aiLikely,
-        confidence,
-        reasoning,
-        rawOutput: response,
-      };
+      const humanLikely = 1 - confidence;
+
+      return { provider: "OpenAI GPT-5 Nano Flex", aiLikely, humanLikely, confidence, reasoning, rawOutput: response };
     } catch (err) {
       console.error("[OpenAIProvider] Error:", err);
-      return {
-        provider: "OpenAI GPT-5 Nano Flex",
-        aiLikely: false,
-        confidence: 0.5,
-        reasoning: "Error or unavailable — defaulting to neutral.",
-        rawOutput: err,
-      };
+      return { provider: "OpenAI GPT-5 Nano Flex", aiLikely: false, humanLikely: 0.5, confidence: 0.5, reasoning: "Error — defaulting neutral.", rawOutput: err };
     }
   },
 };

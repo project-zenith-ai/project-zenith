@@ -1,5 +1,5 @@
 export interface TextFeatures {
-  length: number;
+  textLength: number;
   wordCount: number;
   avgWordLength: number;
   lexicalDiversity: number;
@@ -42,7 +42,7 @@ export function extractTextFeatures(text: string): TextFeatures {
     lexicalDiversity * (1 - stopwordRatio) * (burstiness + 0.5);
 
   return {
-    length: text.length,
+    textLength: text.length,
     wordCount,
     avgWordLength,
     lexicalDiversity,
